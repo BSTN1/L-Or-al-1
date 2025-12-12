@@ -1,0 +1,42 @@
+# LOREALPARIS EMAIL SCRAPER – Just run this file
+import requests, re, json, time, random
+from fake_useragent import UserAgent
+
+try:
+    from fake_useragent import UserAgent
+except:
+    import os
+    os.system("pip install fake-useragent")
+    from fake_useragent import UserAgent
+
+ua = UserAgent()
+print("Scraping @lorealparis for public emails...\n")
+time.sleep(2)
+
+url = "https://www.instagram.com/lorealparis/"
+headers = {"User-Agent": ua.random}
+
+r = requests.get(url, headers=headers, timeout=20)
+match = re.search(r'window\._sharedData = ({.*?});', r.text)
+data = json.loads(match.group(1))
+user = data["entry_data"]["ProfilePage"][0]["graphql"]["user"]
+
+emails = set()
+if user.get("business_email"):
+    emails.add(user["business_email"].lower())
+
+bio = user.get("biography", "")
+emails.update(re.findall(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b', bio))
+
+print("="*50)
+if emails:
+    print(f"FOUND {len(emails)} EMAIL(S):")
+    for e in emails:
+        print("   " + e)
+    open("LOREALPARIS_EMAILS.txt", "w").write("\n".join(emails))
+    print("\nSaved → LOREALPARIS_EMAILS.txt")
+else:
+    print("No public email found")
+
+print("\nFinished!")
+input("\nPress Enter to close..."),
